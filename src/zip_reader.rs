@@ -2,7 +2,6 @@ use super::zip::read::{ZipFile,ZipArchive};
 use super::cli::{match_regex,display_size};
 use std::io;
 use std::io::prelude::*;
-use std::ops::RangeTo;
 
 ///Display a Zip File
 ///
@@ -24,9 +23,15 @@ pub fn display_zip_file(z: &ZipFile) {
 }
 
 
-
-
-
+///Get the item at an index
+///Panic on error
+pub fn get_index<'a,R: Read+Seek>(a: &'a mut ZipArchive<R>,index: usize)
+-> ZipFile<'a> {
+    match a.by_index(index) {
+        Ok(x) => x,
+        Err(e) => panic!("\n\nCould nto read zip file\n{:?}\n",e)
+    }
+}
 
 ///Borrow both the zip file, and 
 pub fn read_zip(z: &mut ZipFile, buff: &mut Vec<u8>) {

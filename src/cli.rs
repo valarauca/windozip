@@ -137,7 +137,7 @@ pub fn match_regex(s: &str) -> bool {
             
 ///What mode the application is running in
 pub enum Mode<'a> {
-    Extract(Values<'a>),
+    Extract(&'a str),
     Create(Values<'a>),
     View(&'a str),
 }
@@ -152,7 +152,7 @@ pub fn cli<'a>( args: &'a ArgMatches<'a>) -> Mode<'a> {
         Option::None => { },
         Option::Some(x) => set_regex(x)
     };
-    match args.values_of("extract") {
+    match args.value_of("extract") {
         Option::None => { },
         Option::Some(x) => return Mode::Extract(x)
     };
