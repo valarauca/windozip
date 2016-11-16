@@ -1,5 +1,4 @@
 
-use std::thread;
 use std::cell::RefCell;
 use super::clap::{Values,App,Arg,ArgMatches};
 use super::regex::Regex;
@@ -54,11 +53,24 @@ App::new("windozip")
 ///Define a global to store regexes
 thread_local! {
     static REGEX: RefCell<Option<Vec<Regex>>> = RefCell::new(None);
+    static CLEAN: Regex = Regex::new(r#"^['"]?([\s\S]*?)['"]?$"#).unwrap();
+    static SIZE: RefCell<bool> = RefCell::new(false);
 }
+
+///clean regex
+fn clean_str<'a>(x: &'a str) -> &'a str {
+    CLEAN.with(|regex|{
+        match regex.captures(x) {
+            Option::None => panic!("Your regex is so bad it triggered the edge case panic."),
+            Option::Some(caps) => caps.at(1).unwrap()
+        }
+    })
+}
+
 
 ///build regex
 fn to_regex(x: &str) -> Regex {
-    match Regex::new(x) {
+    match Regex::new(clean_str(x)) {
         Err(e) => {
             panic!("\n\n\nFailed to created regex on:\n{}\n{:?}\n\n",x,e);
         },
@@ -73,6 +85,26 @@ fn set_regex(v: Values) {
         *item = Some(v.map(to_regex).collect());
     })
 }
+
+
+///set flag
+fn set_size() {
+    SIZE.with(|cell| {
+        let mut item = cell.borrow_mut();
+        *item = true;
+    });
+}
+
+///display file size
+pub fn display_size() -> bool {
+    SIZE.with(|cell|{
+        let lambda = |x: &bool| -> bool {
+            *x
+        };
+        lambda(&cell.borrow())
+    })
+}
+
 
 ///Does our input string match the given regex?
 ///If there are no regexes it always returnes true
@@ -113,6 +145,9 @@ pub enum Mode<'a> {
 ///Convert clap into a more usable enum
 pub fn cli<'a>( args: &'a ArgMatches<'a>) -> Mode<'a> {
     //put clap's args in the proper location
+    if args.is_present("size") {
+        set_size();
+    }
     match args.values_of("regex") {
         Option::None => { },
         Option::Some(x) => set_regex(x)

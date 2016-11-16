@@ -2,8 +2,11 @@ extern crate clap;
 extern crate zip;
 extern crate regex;
 
+mod zip_reader;
+use zip_reader::{display_zip_file, read_zip};
+
 mod cli;
-use cli::{Mode,match_regex,cli,claptrap};
+use cli::{Mode,cli,claptrap};
 
 use zip::read::ZipArchive;
 
@@ -34,12 +37,7 @@ fn main() {
             for i in 0..reader.len() {
                 match reader.by_index(i) {
                     Err(e) => println!("Could not open index {:?} {:?}",i,e),
-                    Ok(x) => {
-                        let name = x.name();
-                        if match_regex(name) {
-                            println!("{}",name);
-                        }
-                    }
+                    Ok(ref x) => display_zip_file(x)
                 };
             }
         },
